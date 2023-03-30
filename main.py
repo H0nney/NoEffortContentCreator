@@ -23,6 +23,14 @@ class textToSpeech:
         for i, voice in enumerate(voices):
             print(f'{i}: {voice.name} {voice.age} - {voice.languages} - {voice.gender}, {voice.id}')
             
+    def createVideoClipFromChunk(self, clip, audioChunk, i, j):
+        availableLength = clip.duration - audioChunk.duration
+        startTime = random.uniform(0, availableLength)
+        clipFragment = clip.subclip(startTime, startTime + audioChunk.duration)
+        clipFragment = clipFragment.set_audio(audioChunk)
+        clipFragment = clipFragment.volumex(1)
+        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=2, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, verbose=False)
+            
     def say(self, text: str, save: bool = False, file_name='output.mp3'):
         # self.engine.say(text)
         
@@ -73,28 +81,23 @@ if __name__ == '__main__':
             
         # for each audio chunk 
         for j, audioChunk in enumerate(audioChunks):
-            availableLength = clip.duration - audioChunk.duration
-            startTime = random.uniform(0, availableLength)
-            clipFragment = clip.subclip(startTime, startTime + audioChunk.duration)
-            clipFragment = clipFragment.set_audio(audioChunk)
-            clipFragment = clipFragment.volumex(1)
-            clipFragment.write_videofile(f'output/video{i}_{j}.mp4', fps=5, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, verbose=False)
+            tts.createVideoClipFromChunk(clip, audioChunk, i, j)
             
         if lastChunk:
-            availableLength = clip.duration - lastChunk.duration
-            startTime = random.uniform(0, availableLength)
-            clipFragment = clip.subclip(startTime, startTime + lastChunk.duration)
-            clipFragment = clipFragment.set_audio(lastChunk)
-            clipFragment = clipFragment.volumex(1)
-            clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=5, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, verbose=False)
+            tts.createVideoClipFromChunk(clip, lastChunk, i, j)
             
-        # clip = clip.subclip(0, audioFileLength) 
+            
+        # --------------
+        # --------------
+        # --------------
+        # --------------
+        #TODO: dodać tekst do filmu, jutro
+        # --------------
+        # --------------
+        # --------------
+        # --------------
         
-        # add audio to clip at startTime
-        # clip = clip.set_audio(audio)
-        # clip = clip.volumex(1) 
-        
-        # txt_clip = mp.TextClip(postTitle, font='impact', fontsize = 36, color = 'white', stroke_color='black', stroke_width=2, align='center', method='caption', bg_color='gray12', size=(640, 0))
+        # txt_clip = mp.TextClip(postTitle, font='impact', fontsize = 36, color = 'white', stroke_color='black', stroke_width=2, align='center', method='caption', bg_color='gray12', size=(1000, 0))
         
         # save txt_clip
         # txt_clip.save_frame(f'output/{i}.png', t=0)
@@ -102,6 +105,7 @@ if __name__ == '__main__':
         # txt_clip = txt_clip.set_pos('center').set_duration(8)
         
         # video = mp.CompositeVideoClip([clip, txt_clip]) 
+        
         # save the video
         # video.write_videofile(f'output/video{i}.mp4', fps=24, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, verbose=False)
         
