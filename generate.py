@@ -10,16 +10,29 @@ import moviepy.video.fx.all as mpvfx
 from urllib.request import urlopen
 import json
 
-def createVideoClipFromChunk(clip, audioChunk, i, j):
+def createVideoClipFromChunk(mode, clip, audioChunk, i, j):
     availableLength = clip.duration - audioChunk.duration
     startTime = random.uniform(0, availableLength)
     clipFragment = clip.subclip(startTime, startTime + audioChunk.duration)
     clipFragment = clipFragment.set_audio(audioChunk)
     clipFragment = clipFragment.volumex(1)
-    clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=8, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
+    if mode == 'dev':
+        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=8, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
+    else:
+        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
             
 
 if __name__ == '__main__':
+    # # # # # # # # # # # # # # # # 
+    # # # # # # # # # # # # # # # # 
+    # # # # # # # # # # # # # # # # 
+    # # # # # # # # # # # # # # # # 
+    mode = 'dev'  # dev or prod # #
+    # # # # # # # # # # # # # # # # 
+    # # # # # # # # # # # # # # # # 
+    # # # # # # # # # # # # # # # # 
+    # # # # # # # # # # # # # # # # 
+    
     postsJson = json.load(open('posts_dev.json'))
 
     i:int = 0
@@ -49,9 +62,11 @@ if __name__ == '__main__':
         postContent = post['data']['selftext']
         postText = postTitle + '. ' + postContent
         
-        # tts = gTTS('hehehuj', lang='en', tld='us', slow=False)
-        tts = gTTS(postText, lang='en', tld='us', slow=False)
-        tts.save(f'output{i}.mp3')
+        if mode == 'dev':
+            tts = gTTS('Quick text for testing', lang='en', tld='us', slow=False)
+        else:
+            tts = gTTS(postText, lang='en', tld='us', slow=False)
+            tts.save(f'output{i}.mp3')
         
         print(f'finished generating audio #{i}')
         
@@ -80,19 +95,23 @@ if __name__ == '__main__':
             
         # for each audio chunk 
         for j, audioChunk in enumerate(audioChunks):
-            print('Skipping to last chunk for debug')
-            # createVideoClipFromChunk(clip, audioChunk, i, j)
+            if mode == 'dev':
+                print('Skipping to last chunk for debug')
+            else:
+                createVideoClipFromChunk(mode, clip, audioChunk, i, j)
             
         if lastChunk:
             txt_clip = mp.TextClip(postTitle + f'\n\npart {j+1}', font='impact', fontsize = 56, color = 'white', stroke_color='black', stroke_width=2.5, align='center', method='caption', size=(1000, 0))
             txt_clip = txt_clip.set_pos(('center', 80)).set_duration(clip.duration)
             txt_clip.save_frame(f'output/{i}.png', t=0)
             video = mp.CompositeVideoClip([clip, txt_clip]) 
-            createVideoClipFromChunk(video, lastChunk, i, j+1)
+            createVideoClipFromChunk(mode, video, lastChunk, i, j+1)
             
-        # add post title;id;videonames to csv generated.csv
-        # with open('generated.csv', 'a') as f:
-        #     f.write(f'{post["data"]["id"]};{",".join([f"video{i}_{j+1}.mp4" for j in range(len(audioChunks))])};' + (f'video{i}_{j+2}.mp4' if lastChunk else '') + '\n')
+        if mode == 'prod':
+            # add post title;id;videonames to csv generated.csv
+            # probably need a better way to add videonames
+            with open('generated.csv', 'a') as f:
+                f.write(f'{post["data"]["id"]};{",".join([f"video{i}_{j+1}.mp4" for j in range(len(audioChunks))])};' + (f'video{i}_{j+2}.mp4' if lastChunk else '') + '\n')
             
         i += 1
         
