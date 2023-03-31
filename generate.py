@@ -1,4 +1,7 @@
-import pyttsx3
+from gtts import gTTS
+from gtts.tokenizer import pre_processors
+import gtts.tokenizer.symbols
+     
 import random
 import moviepy.editor as mp
 import moviepy.video.fx.all as mpvfx
@@ -6,47 +9,27 @@ import moviepy.video.fx.all as mpvfx
 from urllib.request import urlopen
 import json
 
-class textToSpeech:
-    engine: pyttsx3.Engine
-    
-    def __init__(self, voice, rate: int, volume: float):
-        self.engine = pyttsx3.init()
-        if voice:
-            self.engine.setProperty('voice', voice)
-            
-        self.engine.setProperty('rate', rate)
-        self.engine.setProperty('volume', volume)
-        
-    def list_available_voices(self):
-        voices: list = self.engine.getProperty('voices')
-        
-        for i, voice in enumerate(voices):
-            print(f'{i}: {voice.name} {voice.age} - {voice.languages} - {voice.gender}, {voice.id}')
-            
-    def createVideoClipFromChunk(self, clip, audioChunk, i, j):
-        availableLength = clip.duration - audioChunk.duration
-        startTime = random.uniform(0, availableLength)
-        clipFragment = clip.subclip(startTime, startTime + audioChunk.duration)
-        clipFragment = clipFragment.set_audio(audioChunk)
-        clipFragment = clipFragment.volumex(1)
-        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=30, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
-            
-    def say(self, text: str, save: bool = False, file_name='output.mp3'):
-        if save:
-            self.engine.save_to_file(text, file_name)
-            
-        self.engine.runAndWait()
+def createVideoClipFromChunk(clip, audioChunk, i, j):
+    availableLength = clip.duration - audioChunk.duration
+    startTime = random.uniform(0, availableLength)
+    clipFragment = clip.subclip(startTime, startTime + audioChunk.duration)
+    clipFragment = clipFragment.set_audio(audioChunk)
+    clipFragment = clipFragment.volumex(1)
+    clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=2, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
             
 
 if __name__ == '__main__':
-    tts = textToSpeech("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_DAVID_11.0", 200, 1)
-    # tts.list_available_voices() #i sie wpierdala tu o wyżej key z rejestru.
-
     postsJson = json.load(open('posts_dev.json'))
-    # postsJson = json.load(open('posts.json'))
 
     i:int = 0
     max_duration = 55
+    
+    abbreviations = {
+        "aita": "Am I the A-hole?",
+    }
+        
+    # append abbreviations to gtts.tokenizer.symbols.SUB_PAIRS
+    gtts.tokenizer.symbols.SUB_PAIRS += [(k, v) for k, v in abbreviations.items()]
                     
     for post in postsJson['data']['children']:
         
@@ -63,7 +46,11 @@ if __name__ == '__main__':
         postTitle = post['data']['title']
         postContent = post['data']['selftext']
         postText = postTitle + '. ' + postContent
-        tts.say(postText, save=True, file_name=f'output{i}.mp3')
+        
+        tts = gTTS(postText, lang='en', tld='us', slow=False)
+        tts.save(f'output{i}.mp3')
+        
+        print(f'finished generating audio #{i}')
         
         clip = mp.VideoFileClip("hypnoclips/mc1.mp4")
         clip = mpvfx.resize(clip, height=1920)
@@ -89,15 +76,15 @@ if __name__ == '__main__':
             audioChunks.append(audio.subclip(j*max_duration, (j+1)*max_duration))
             
         # for each audio chunk 
-        for j, audioChunk in enumerate(audioChunks):
-            tts.createVideoClipFromChunk(clip, audioChunk, i, j)
+        # for j, audioChunk in enumerate(audioChunks):
+        #     createVideoClipFromChunk(clip, audioChunk, i, j)
             
         if lastChunk:
-            tts.createVideoClipFromChunk(clip, lastChunk, i, j+1)
+            createVideoClipFromChunk(clip, lastChunk, i, j+1)
             
         # add post title;id;videonames to csv generated.csv
-        with open('generated.csv', 'a') as f:
-            f.write(f'{post["data"]["id"]};{",".join([f"video{i}_{j+1}.mp4" for j in range(len(audioChunks))])};' + (f'video{i}_{j+2}.mp4' if lastChunk else '') + '\n')
+        # with open('generated.csv', 'a') as f:
+        #     f.write(f'{post["data"]["id"]};{",".join([f"video{i}_{j+1}.mp4" for j in range(len(audioChunks))])};' + (f'video{i}_{j+2}.mp4' if lastChunk else '') + '\n')
             
         i += 1
         
