@@ -29,7 +29,7 @@ class textToSpeech:
         clipFragment = clip.subclip(startTime, startTime + audioChunk.duration)
         clipFragment = clipFragment.set_audio(audioChunk)
         clipFragment = clipFragment.volumex(1)
-        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=2, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, verbose=False)
+        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=30, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
             
     def say(self, text: str, save: bool = False, file_name='output.mp3'):
         if save:
@@ -42,15 +42,24 @@ if __name__ == '__main__':
     tts = textToSpeech("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_DAVID_11.0", 200, 1)
     # tts.list_available_voices() #i sie wpierdala tu o wyżej key z rejestru.
 
-    # Ładujemy jsona z reddita, można to z urla pobierać ale na czas devowania nie bede loadował cały czas ni?
     postsJson = json.load(open('posts_dev.json'))
     # postsJson = json.load(open('posts.json'))
 
-    i = 0
+    i:int = 0
     max_duration = 55
-    print('tescik :)')
-    
+                    
     for post in postsJson['data']['children']:
+        
+        generate = True
+        # check if post is already generated
+        with open('generated.csv', 'r') as f:
+            for line in f:
+                if post['data']['id'] in line:
+                    generate = False
+    
+        if not generate:
+            continue
+        
         postTitle = post['data']['title']
         postContent = post['data']['selftext']
         postText = postTitle + '. ' + postContent
@@ -75,26 +84,29 @@ if __name__ == '__main__':
         remainingAudio = audioFileLength % max_duration
         if remainingAudio > 0:
             lastChunk = audio.subclip(chunkCount*max_duration, chunkCount*max_duration + remainingAudio)
-        
+            
         for j in range(int(chunkCount)):
             audioChunks.append(audio.subclip(j*max_duration, (j+1)*max_duration))
             
         # for each audio chunk 
-        # for j, audioChunk in enumerate(audioChunks):
-            # tts.createVideoClipFromChunk(clip, audioChunk, i, j)
+        for j, audioChunk in enumerate(audioChunks):
+            tts.createVideoClipFromChunk(clip, audioChunk, i, j)
             
-        # if lastChunk:
-        #     tts.createVideoClipFromChunk(clip, lastChunk, i, j)
+        if lastChunk:
+            tts.createVideoClipFromChunk(clip, lastChunk, i, j+1)
             
-    #     # add post title;id;videonames to csv generated.csv
-    #     with open('generated.csv', 'a') as f:
-    #         f.write(f'{post["data"]["id"]};{",".join([f"video{i}_{j+1}.mp4" for j in range(len(audioChunks))])};' + (f'video{i}_{j+2}.mp4' if lastChunk else '') + '\n')
+        # add post title;id;videonames to csv generated.csv
+        with open('generated.csv', 'a') as f:
+            f.write(f'{post["data"]["id"]};{",".join([f"video{i}_{j+1}.mp4" for j in range(len(audioChunks))])};' + (f'video{i}_{j+2}.mp4' if lastChunk else '') + '\n')
             
+        i += 1
+        
+        
     #     # --------------
     #     # --------------
     #     # --------------
     #     # --------------
-    #     # chuj: dodać tekst do filmu, jutro
+    #     # TODO: dodać tekst do filmu, jutro
     #     # --------------
     #     # --------------
     #     # --------------
