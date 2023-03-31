@@ -1,13 +1,14 @@
 from gtts import gTTS
 from gtts.tokenizer import pre_processors
 import gtts.tokenizer.symbols
-import html2image
+from html2image import Html2Image
+hti = Html2Image()
      
 import random
 import moviepy.editor as mp
 import moviepy.video.fx.all as mpvfx
 
-from urllib.request import urlopen
+# from urllib.request import urlopen
 import json
 
 def createVideoClipFromChunk(mode, clip, audioChunk, i, j):
@@ -46,7 +47,6 @@ if __name__ == '__main__':
     gtts.tokenizer.symbols.SUB_PAIRS += [(k, v) for k, v in abbreviations.items()]
                     
     for post in postsJson['data']['children']:
-        
         generate = True
         # check if post is already generated
         with open('generated.csv', 'r') as f:
@@ -60,6 +60,7 @@ if __name__ == '__main__':
         
         postTitle = post['data']['title']
         postContent = post['data']['selftext']
+        postSubreddit = post['data']['subreddit']
         postText = postTitle + '. ' + postContent
         
         if mode == 'dev':
@@ -100,11 +101,17 @@ if __name__ == '__main__':
                 createVideoClipFromChunk(mode, clip, audioChunk, i, j)
             
         if lastChunk:
-            txt_clip = mp.TextClip(postTitle + f'\n\npart {j+1}', font='impact', fontsize = 56, color = 'white', stroke_color='black', stroke_width=2.5, align='center', method='caption', size=(1000, 0))
-            txt_clip = txt_clip.set_pos(('center', 80)).set_duration(clip.duration)
-            txt_clip.save_frame(f'output/{i}.png', t=0)
-            video = mp.CompositeVideoClip([clip, txt_clip]) 
-            createVideoClipFromChunk(mode, video, lastChunk, i, j+1)
+            # txt_clip = mp.TextClip(postTitle + f'\n\npart {j+1}', font='impact', fontsize = 56, color = 'white', stroke_color='black', stroke_width=2.5, align='center', method='caption', size=(1000, 0))
+            # txt_clip = txt_clip.set_pos(('center', 80)).set_duration(clip.duration)
+            # txt_clip.save_frame(f'output/{i}.png', t=0)
+            hti.screenshot(
+                url=f'C:/Users/HNY/Desktop/YTShortsBot/html/titlebar.html?title={postTitle}&part={j+1}&subreddit={postSubreddit}',
+                size=(640, 480),
+                save_as=f'titlebar{i}.png',
+            )
+            print('screened')
+            # video = mp.CompositeVideoClip([clip, txt_clip]) 
+            # createVideoClipFromChunk(mode, video, lastChunk, i, j+1)
             
         if mode == 'prod':
             # add post title;id;videonames to csv generated.csv
