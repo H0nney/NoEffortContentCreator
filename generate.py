@@ -79,13 +79,13 @@ if __name__ == '__main__':
         audio = mp.AudioFileClip(f'output{i}.mp3')
         audioFileLength = audio.duration
         
+        
         # divide audio into max_duration chunks
         audioChunks = []
         lastChunk = None
         
         chunkCount = audioFileLength // max_duration
         
-        # remaining audio
         remainingAudio = audioFileLength % max_duration
         if remainingAudio > 0:
             lastChunk = audio.subclip(chunkCount*max_duration, chunkCount*max_duration + remainingAudio)
@@ -93,7 +93,6 @@ if __name__ == '__main__':
         for j in range(int(chunkCount)):
             audioChunks.append(audio.subclip(j*max_duration, (j+1)*max_duration))
             
-        # for each audio chunk 
         for j, audioChunk in enumerate(audioChunks):
             if mode == 'dev':
                 print('Skipping to last chunk for debug')
@@ -114,27 +113,6 @@ if __name__ == '__main__':
                 f.write(f'{post["data"]["id"]};{",".join([f"video{i}_{j+1}.mp4" for j in range(len(audioChunks))])};' + (f'video{i}_{j+2}.mp4' if lastChunk else '') + '\n')
             
         i += 1
-        
-        
-    #     # --------------
-    #     # --------------
-    #     # --------------
-    #     # --------------
-    #     # TODO: dodać tekst do filmu, jutro
-    #     # --------------
-    #     # --------------
-    #     # --------------
-    #     # --------------
-        
-        
-    #     # save txt_clip
-    #     # txt_clip.save_frame(f'output/{i}.png', t=0)
-        
-        
-    #     # save the video
-    #     # video.write_videofile(f'output/video{i}.mp4', fps=24, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, verbose=False)
-        
-    #     i += 1
 
 # HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0
 # json brany z url https://www.reddit.com/r/AmITheAssHole/top/.json?t=all&limit=2
