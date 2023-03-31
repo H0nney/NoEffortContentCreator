@@ -1,6 +1,7 @@
 from gtts import gTTS
 from gtts.tokenizer import pre_processors
 import gtts.tokenizer.symbols
+import html2image
      
 import random
 import moviepy.editor as mp
@@ -15,7 +16,7 @@ def createVideoClipFromChunk(clip, audioChunk, i, j):
     clipFragment = clip.subclip(startTime, startTime + audioChunk.duration)
     clipFragment = clipFragment.set_audio(audioChunk)
     clipFragment = clipFragment.volumex(1)
-    clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=2, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
+    clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=8, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
             
 
 if __name__ == '__main__':
@@ -41,12 +42,14 @@ if __name__ == '__main__':
                     generate = False
     
         if not generate:
+            i += 1
             continue
         
         postTitle = post['data']['title']
         postContent = post['data']['selftext']
         postText = postTitle + '. ' + postContent
         
+        # tts = gTTS('hehehuj', lang='en', tld='us', slow=False)
         tts = gTTS(postText, lang='en', tld='us', slow=False)
         tts.save(f'output{i}.mp3')
         
@@ -76,11 +79,16 @@ if __name__ == '__main__':
             audioChunks.append(audio.subclip(j*max_duration, (j+1)*max_duration))
             
         # for each audio chunk 
-        # for j, audioChunk in enumerate(audioChunks):
-        #     createVideoClipFromChunk(clip, audioChunk, i, j)
+        for j, audioChunk in enumerate(audioChunks):
+            print('Skipping to last chunk for debug')
+            # createVideoClipFromChunk(clip, audioChunk, i, j)
             
         if lastChunk:
-            createVideoClipFromChunk(clip, lastChunk, i, j+1)
+            txt_clip = mp.TextClip(postTitle + f'\n\npart {j+1}', font='impact', fontsize = 56, color = 'white', stroke_color='black', stroke_width=2.5, align='center', method='caption', size=(1000, 0))
+            txt_clip = txt_clip.set_pos(('center', 80)).set_duration(clip.duration)
+            txt_clip.save_frame(f'output/{i}.png', t=0)
+            video = mp.CompositeVideoClip([clip, txt_clip]) 
+            createVideoClipFromChunk(video, lastChunk, i, j+1)
             
         # add post title;id;videonames to csv generated.csv
         # with open('generated.csv', 'a') as f:
@@ -99,14 +107,10 @@ if __name__ == '__main__':
     #     # --------------
     #     # --------------
         
-    #     # txt_clip = mp.TextClip(postTitle, font='impact', fontsize = 36, color = 'white', stroke_color='black', stroke_width=2, align='center', method='caption', bg_color='gray12', size=(1000, 0))
         
     #     # save txt_clip
     #     # txt_clip.save_frame(f'output/{i}.png', t=0)
         
-    #     # txt_clip = txt_clip.set_pos('center').set_duration(8)
-        
-    #     # video = mp.CompositeVideoClip([clip, txt_clip]) 
         
     #     # save the video
     #     # video.write_videofile(f'output/video{i}.mp4', fps=24, codec='libx264', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, verbose=False)
