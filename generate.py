@@ -2,7 +2,7 @@ from gtts import gTTS
 from gtts.tokenizer import pre_processors
 import gtts.tokenizer.symbols
 from html2image import Html2Image
-hti = Html2Image()
+hti = Html2Image(browser_executable='chromium/GoogleChromePortable64/App/Chrome-bin/chrome.exe')
      
 import random
 import moviepy.editor as mp
@@ -18,9 +18,9 @@ def createVideoClipFromChunk(mode, clip, audioChunk, i, j):
     clipFragment = clipFragment.set_audio(audioChunk)
     clipFragment = clipFragment.volumex(1)
     if mode == 'dev':
-        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=8, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
+        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=3, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
     else:
-        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
+        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=3, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
             
 
 if __name__ == '__main__':
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # # # # # # # # # # # # # # # # 
     # # # # # # # # # # # # # # # # 
     # # # # # # # # # # # # # # # # 
-    mode = 'dev'  # dev or prod # #
+    mode = 'prod'  # dev or prod # #
     # # # # # # # # # # # # # # # # 
     # # # # # # # # # # # # # # # # 
     # # # # # # # # # # # # # # # # 
@@ -41,9 +41,9 @@ if __name__ == '__main__':
     
     abbreviations = {
         "aita": "Am I the A-hole?",
+        "AmItheAsshole": "AmItheA--hole",
     }
         
-    # append abbreviations to gtts.tokenizer.symbols.SUB_PAIRS
     gtts.tokenizer.symbols.SUB_PAIRS += [(k, v) for k, v in abbreviations.items()]
                     
     for post in postsJson['data']['children']:
@@ -61,6 +61,9 @@ if __name__ == '__main__':
         postTitle = post['data']['title']
         postContent = post['data']['selftext']
         postSubreddit = post['data']['subreddit']
+        if postSubreddit in abbreviations:
+            postSubreddit = abbreviations[postSubreddit]
+            
         postText = postTitle + '. ' + postContent
         
         if mode == 'dev':
@@ -80,7 +83,6 @@ if __name__ == '__main__':
         audio = mp.AudioFileClip(f'output{i}.mp3')
         audioFileLength = audio.duration
         
-        
         # divide audio into max_duration chunks
         audioChunks = []
         lastChunk = None
@@ -98,20 +100,31 @@ if __name__ == '__main__':
             if mode == 'dev':
                 print('Skipping to last chunk for debug')
             else:
-                createVideoClipFromChunk(mode, clip, audioChunk, i, j)
+                hti.screenshot(
+                    # Tu kurwa wsadzasz path do htmla i chuj mnie to obchodzi bo juz zmeczon mocno
+                    url=f'C:/Users/HNY/Desktop/YTShortsBot/html/titlebar.html?title={postTitle}&part={j+1}&subreddit={postSubreddit}',
+                    size=(1080, 1920),
+                    save_as=f'titlebar{i}.png',
+                )
+                print(f'screened titlebar{i}.png, part {j}')
+            
+                titleBar = mp.ImageClip(f'titlebar{i}.png').set_duration(clip.duration)
+                video = mp.CompositeVideoClip([clip, titleBar]) 
+                
+                createVideoClipFromChunk(mode, video, audioChunk, i, j)
             
         if lastChunk:
-            # txt_clip = mp.TextClip(postTitle + f'\n\npart {j+1}', font='impact', fontsize = 56, color = 'white', stroke_color='black', stroke_width=2.5, align='center', method='caption', size=(1000, 0))
-            # txt_clip = txt_clip.set_pos(('center', 80)).set_duration(clip.duration)
-            # txt_clip.save_frame(f'output/{i}.png', t=0)
             hti.screenshot(
+                # url params as title;part;subreddit
                 url=f'C:/Users/HNY/Desktop/YTShortsBot/html/titlebar.html?title={postTitle}&part={j+1}&subreddit={postSubreddit}',
-                size=(640, 480),
-                save_as=f'titlebar{i}.png',
+                size=(1080, 1920),
+                save_as=f'titlebar{i}.png, part {j+1}',
             )
-            print('screened')
-            # video = mp.CompositeVideoClip([clip, txt_clip]) 
-            # createVideoClipFromChunk(mode, video, lastChunk, i, j+1)
+            print(f'screened titlebar{i}.png')
+            
+            titleBar = mp.ImageClip(f'titlebar{i}.png').set_duration(clip.duration)
+            video = mp.CompositeVideoClip([clip, titleBar]) 
+            createVideoClipFromChunk(mode, video, lastChunk, i, j+1)
             
         if mode == 'prod':
             # add post title;id;videonames to csv generated.csv
