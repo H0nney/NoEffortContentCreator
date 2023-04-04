@@ -52,13 +52,13 @@
 
     <div class="titleBar">
         <div class="subName">
-            /r/HnyDev
+            /u/HnyDev
         </div>
         <div class="title">
-            Hopefully someday this subreddit starts to exist lol
+            Subscribe to chanel thenk you very mach
         </div>
         <div class="partNo">
-            PART 1
+            PART INDEX
         </div>
     </div>
 
@@ -80,7 +80,12 @@
             var subreddit = urlParams.get('subreddit');
             $('.subName').html('/r/'+subreddit);
             $('.title').html(title);
-            $('.partNo').html('PART '+part);
+
+            if(part != null){
+                $('.partNo').html('PART '+part);
+            }else{
+                $('.partNo').remove();
+            }
         });
     </script>
 
