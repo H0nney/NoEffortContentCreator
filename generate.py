@@ -20,17 +20,17 @@ def createVideoClipFromChunk(mode, clip, audioChunk, i, j):
     if mode == 'dev':
         clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=3, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
     else:
-        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=3, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
+        clipFragment.write_videofile(f'output/video{i}_{j+1}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
             
 
 if __name__ == '__main__':
     # # # # # # # # # # # # # # # # 
     # # # # # # # # # # # # # # # # 
+    # # # MODE is dev or prod # # #
     # # # # # # # # # # # # # # # # 
+    mode = 'prod'  # # # # # # # # #
     # # # # # # # # # # # # # # # # 
-    mode = 'prod'  # dev or prod # #
-    # # # # # # # # # # # # # # # # 
-    # # # # # # # # # # # # # # # # 
+    # # # MODE is dev or prod # # #
     # # # # # # # # # # # # # # # # 
     # # # # # # # # # # # # # # # # 
     
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     }
         
     gtts.tokenizer.symbols.SUB_PAIRS += [(k, v) for k, v in abbreviations.items()]
-                    
+
     for post in postsJson['data']['children']:
         generate = True
         # check if post is already generated
