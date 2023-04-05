@@ -21,7 +21,7 @@ def createVideoClipFromChunk(mode, clip, audioChunk, videoIndex, chunkIndex):
     if mode == 'dev':
         clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='7000k')
     else:
-        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=2, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='7000k')
+        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='7000k')
             
 
 if __name__ == '__main__':
@@ -31,11 +31,11 @@ if __name__ == '__main__':
     
     # # # MODE is dev or prod # # #
     # # # # # # # # # # # # # # # # 
-    mode = 'dev'  # # # # # # # # #
+    mode = 'prod'  # # # # # # # # #
     # # # # # # # # # # # # # # # # 
     # # # MODE is dev or prod # # #
     
-    postsJson = json.load(open('posts_dev.json'))
+    postsJson = json.load(open('posts.json'))
 
     i:int = 0
     
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         audioContent = audioContent.subclip(0, audioContent.duration - 0.12)
         
         # Check if audio content length is longer than 180 seconds
-        if audioContent.duration > 280:
+        if audioContent.duration > 170:
             print(f'### Audio content too long, skipping post {i}')
             i += 1
             continue
