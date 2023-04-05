@@ -1,6 +1,3 @@
-from gtts import gTTS
-from gtts.tokenizer import pre_processors
-import gtts.tokenizer.symbols
 from html2image import Html2Image
 hti = Html2Image(browser_executable='chromium/GoogleChromePortable64/App/Chrome-bin/chrome.exe')
      
@@ -9,8 +6,6 @@ import random
 import moviepy.editor as mp
 import moviepy.video.fx.all as mpvfx
 
-# import main.py from folder /tiktok_tts
-import sys
 from tiktok_tts.main import main as tiktok_tts
 
 
@@ -24,9 +19,9 @@ def createVideoClipFromChunk(mode, clip, audioChunk, videoIndex, chunkIndex):
     clipFragment = clipFragment.set_audio(audioChunk)
     clipFragment = clipFragment.volumex(1)
     if mode == 'dev':
-        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=2, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
+        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='7000k')
     else:
-        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=16, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
+        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=2, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='7000k')
             
 
 if __name__ == '__main__':
@@ -36,7 +31,7 @@ if __name__ == '__main__':
     
     # # # MODE is dev or prod # # #
     # # # # # # # # # # # # # # # # 
-    mode = 'prod'  # # # # # # # # #
+    mode = 'dev'  # # # # # # # # #
     # # # # # # # # # # # # # # # # 
     # # # MODE is dev or prod # # #
     
@@ -62,11 +57,15 @@ if __name__ == '__main__':
         
         generate = True
         
-        # Check if post is already generated
-        with open('generated.csv', 'r') as f:
-            for line in f:
-                if post['data']['id'] in line:
-                    generate = False
+        postId = post['data']['id']
+        # Check if post is already generated in log.json posts
+        if os.path.exists('log.json'):
+            with open('log.json', 'r') as f:
+                log = json.load(f)
+                for post in log['posts']:
+                    if post['id'] == postId:
+                        generate = False
+                        break
     
         if not generate:
             print(f'### Post {i} already generated, skipping')
@@ -114,7 +113,7 @@ if __name__ == '__main__':
         
         print(f'### Finished generating audio no.{i}')
         
-        clip = mp.VideoFileClip("hypnoclips/mc1.mp4")
+        clip = mp.VideoFileClip("backgrounds/parkour_4k.webm")
         clip = mpvfx.resize(clip, height=1920)
         
         clip_w, clip_h = clip.size
@@ -193,9 +192,6 @@ if __name__ == '__main__':
                 
                 print(f'### Generating last chunk: post {i}, part {lastChunkIndex}')
                 
-                # Generate speech for part number
-                ttsPart = gTTS(f'Part {lastChunkIndex}', lang='en', tld='us', slow=False)
-                ttsPart.save(f'temp/output{i}_part.mp3')
                 audioPart = mp.AudioFileClip(f'pregenerated/part{lastChunkIndex}.mp3')
                 
                 # Add title, content and part number to one audio file
@@ -237,22 +233,23 @@ if __name__ == '__main__':
             # audioContent
             
         if mode == 'prod':
-            print(f'### Adding post {i} to JSON --- TODO')
+            print(f'### Adding post {i} to JSON LOG')
+            # Add post to log.json
+            with open('log.json', 'r') as f:
+                data = json.load(f)
+                # add post to json
+                data['posts'].append({ 'id': postId, 'title': postTitle, 'subreddit': postSubreddit, 'status': 'generated', 'index' : i })
+
+            with open('log.json', 'w') as f:
+                json.dump(data, f, indent=4)    
             
         # CLEANUP
-        # CLEANUP
-        # CLEANUP
-        # remove everything from temp folder
         for file in os.listdir('temp'):
             os.remove(f'temp/{file}')
             
-        #remove titlebars
         for file in os.listdir('.'):
             if file.startswith('titlebar'):
                 os.remove(file)
-        # CLEANUP
-        # CLEANUP
-        # CLEANUP
                 
         i += 1
 
