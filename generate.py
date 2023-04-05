@@ -26,7 +26,7 @@ def createVideoClipFromChunk(mode, clip, audioChunk, videoIndex, chunkIndex):
 if __name__ == '__main__':
     # # # MODE is dev or prod # # #
     # # # # # # # # # # # # # # # # 
-    mode = 'prod'  # # # # # # # # #
+    mode = 'dev'  # # # # # # # # #
     # # # # # # # # # # # # # # # # 
     # # # MODE is dev or prod # # #
     
@@ -61,12 +61,22 @@ if __name__ == '__main__':
                     generate = False
     
         if not generate:
+            print(f'### Post {i} already generated, skipping')
             i += 1
             continue
         
         postTitle = post['data']['title']
         postContent = post['data']['selftext']
         postSubreddit = post['data']['subreddit']
+        
+        # Plan for now: gtts has a limit of 100? characters per sentence, 
+        # so we need to split the text into sentences 
+        # and concatenate them into a single string co ty pierdolisz kopilot kurwa,
+        # Tak jak wyżej ale musimy wygenerować serie audio z sensownymi breakpointami
+        # a potem je połączyć w całość, reszta kodu bez zmian
+        # to co, szukamy innego tts xDDDD
+        # nie wyczymie
+        
         if postSubreddit in abbreviations:
             postSubreddit = abbreviations[postSubreddit]
             
