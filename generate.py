@@ -4,9 +4,15 @@ import gtts.tokenizer.symbols
 from html2image import Html2Image
 hti = Html2Image(browser_executable='chromium/GoogleChromePortable64/App/Chrome-bin/chrome.exe')
      
+import os
 import random
 import moviepy.editor as mp
 import moviepy.video.fx.all as mpvfx
+
+# import main.py from folder /tiktok_tts
+import sys
+from tiktok_tts.main import main as tiktok_tts
+
 
 # from urllib.request import urlopen
 import json
@@ -20,13 +26,17 @@ def createVideoClipFromChunk(mode, clip, audioChunk, videoIndex, chunkIndex):
     if mode == 'dev':
         clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=2, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
     else:
-        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=2, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
+        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=16, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False)
             
 
 if __name__ == '__main__':
+    #Prawda jest taka, że jeżeli nie ogarne tego tak, żebym ja był z tego zadowolony, to po chuj to robie
+    #Z drugiej strony nie wszystko musi podobać się mnie, i z takim podejściem nie da rade zrobić nic bo zawsze coś będzie kuło w oczy
+    #Rafonix przejebane zycie 2k23
+    
     # # # MODE is dev or prod # # #
     # # # # # # # # # # # # # # # # 
-    mode = 'dev'  # # # # # # # # #
+    mode = 'prod'  # # # # # # # # #
     # # # # # # # # # # # # # # # # 
     # # # MODE is dev or prod # # #
     
@@ -35,12 +45,10 @@ if __name__ == '__main__':
     i:int = 0
     
     abbreviations = {
-        "aita": "Am I the bad one?",
+        "AITA": "Am I the bad one?",
         "AmItheAsshole": "AmItheA--hole",
     }
         
-    gtts.tokenizer.symbols.SUB_PAIRS += [(k, v) for k, v in abbreviations.items()]
-    
     min_duration = 0
     if mode == 'dev':
         min_duration = 2
@@ -50,7 +58,7 @@ if __name__ == '__main__':
     for post in postsJson['data']['children']:
         print('---------------------------------')
         print(f'### Processing audio no.{i}')
-        max_duration = 59 # Begin with 59, to be safe of shorts limit, substract title later
+        max_duration = 58 # Begin with 58, to be safe of shorts limit, substract title later
         
         generate = True
         
@@ -67,33 +75,42 @@ if __name__ == '__main__':
         
         postTitle = post['data']['title']
         postContent = post['data']['selftext']
+        # if post content longer than 3000 characters, skip
+        if len(postContent) > 3000:
+            print('### Post text too long, skipping')
+            i += 1
+            continue
+        
         postSubreddit = post['data']['subreddit']
         
-        # Plan for now: gtts has a limit of 100? characters per sentence, 
-        # so we need to split the text into sentences 
-        # and concatenate them into a single string co ty pierdolisz kopilot kurwa,
-        # Tak jak wyżej ale musimy wygenerować serie audio z sensownymi breakpointami
-        # a potem je połączyć w całość, reszta kodu bez zmian
-        # to co, szukamy innego tts xDDDD
-        # nie wyczymie
-        
+        # check title and content for abbreviations
+        for k, v in abbreviations.items():
+            postTitle = postTitle.replace(k, v)
+            postContent = postContent.replace(k, v)
+                
+        textPath = f'temp/text_title{i}.txt'
+        with open(textPath, 'w') as f:
+            f.write(postTitle)
+            
+        textContentPath = f'temp/text_content{i}.txt'
+        with open(textContentPath, 'w') as f:
+            f.write(postContent + f'. Thank you for listening. Leave a like!')
+            
         if postSubreddit in abbreviations:
             postSubreddit = abbreviations[postSubreddit]
             
-        # postText = postTitle + '. ' + postContent
-        
+        # Grab sessionid from sessionid.txt
+        # SessionID is required to generate audio
+        with open('sessionid.txt', 'r') as f:
+            sessionid = f.read()
+
         # Divide title and content into separate files
         if mode == 'dev':
-            # tts = gTTS('Subskrybuj kanał HnyDEV żeby oglądać więcej pięknego kodu i słabych kobiet', lang='en', tld='us', slow=False)
-            ttsTitle = gTTS('Example title to test generation.', lang='en', tld='us', slow=False)
-            ttsContent = gTTS('Example content to test generation.', lang='en', tld='us', slow=False)
-            ttsTitle.save(f'output{i}_title.mp3')
-            ttsContent.save(f'output{i}_content.mp3')
+            tiktok_tts('en_us_001', 'pregenerated/exampleTitle.txt', sessionid, f'temp/output{i}_title.mp3')
+            tiktok_tts('en_us_001', 'pregenerated/exampleContent.txt', sessionid, f'temp/output{i}_content.mp3')
         else:
-            ttsTitle = gTTS(postTitle, lang='en', tld='us', slow=False)
-            ttsContent = gTTS(postContent, lang='en', tld='us', slow=False)
-            ttsTitle.save(f'output{i}_title.mp3')
-            ttsContent.save(f'output{i}_content.mp3')
+            tiktok_tts('en_us_001', textPath, sessionid, f'temp/output{i}_title.mp3')
+            tiktok_tts('en_us_001', textContentPath, sessionid, f'temp/output{i}_content.mp3')
         
         print(f'### Finished generating audio no.{i}')
         
@@ -103,8 +120,10 @@ if __name__ == '__main__':
         clip_w, clip_h = clip.size
         clip = mpvfx.crop(clip, x_center=clip_w/2, y_center=clip_h/2, width=1080, height=1920)
         
-        audioTitle = mp.AudioFileClip(f'output{i}_title.mp3')
-        audioContent = mp.AudioFileClip(f'output{i}_content.mp3')
+        audioTitle = mp.AudioFileClip(f'temp/output{i}_title.mp3')
+        audioContent = mp.AudioFileClip(f'temp/output{i}_content.mp3')
+        # Audiocontent is generating with annoying glitch at the end.
+        audioContent = audioContent.subclip(0, audioContent.duration - 0.12)
         
         # Check if audio content length is longer than 180 seconds
         if audioContent.duration > 280:
@@ -152,9 +171,7 @@ if __name__ == '__main__':
                     print(f'### Generating chunk: post {i}, part {partNo}')
                     
                     # Generate speech for part number
-                    ttsPart = gTTS(f'Part {partNo}', lang='en', tld='us', slow=False)
-                    ttsPart.save(f'output{i}_part.mp3')
-                    audioPart = mp.AudioFileClip(f'output{i}_part.mp3')
+                    audioPart = mp.AudioFileClip(f'pregenerated/part{partNo}.mp3')
                     
                     # Add title, content and part number to one audio file
                     generatedChunk = mp.concatenate_audioclips([audioTitle, audioPart, audioChunk])
@@ -178,8 +195,8 @@ if __name__ == '__main__':
                 
                 # Generate speech for part number
                 ttsPart = gTTS(f'Part {lastChunkIndex}', lang='en', tld='us', slow=False)
-                ttsPart.save(f'output{i}_part.mp3')
-                audioPart = mp.AudioFileClip(f'output{i}_part.mp3')
+                ttsPart.save(f'temp/output{i}_part.mp3')
+                audioPart = mp.AudioFileClip(f'pregenerated/part{lastChunkIndex}.mp3')
                 
                 # Add title, content and part number to one audio file
                 generatedChunk = mp.concatenate_audioclips([audioTitle, audioPart, lastChunk])
@@ -218,17 +235,25 @@ if __name__ == '__main__':
             createVideoClipFromChunk(mode, video, generatedAudio, i, 0)
             # audioTitle
             # audioContent
-                
-            
             
         if mode == 'prod':
-            # add post title;id;videonames to csv generated.csv
-            # probably need a better way to add videonames
-            # A JSON what the hell am i thinking 2head 
-            with open('generated.csv', 'a') as f:
-                f.write(f'{post["data"]["id"]};{",".join([f"video{i}_{j+1}.mp4" for j in range(len(audioChunks))])};' + (f'video{i}_{lastChunkIndex}.mp4' if lastChunk else '') + '\n')
+            print(f'### Adding post {i} to JSON --- TODO')
             
+        # CLEANUP
+        # CLEANUP
+        # CLEANUP
+        # remove everything from temp folder
+        for file in os.listdir('temp'):
+            os.remove(f'temp/{file}')
+            
+        #remove titlebars
+        for file in os.listdir('.'):
+            if file.startswith('titlebar'):
+                os.remove(file)
+        # CLEANUP
+        # CLEANUP
+        # CLEANUP
+                
         i += 1
 
-# HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0
 # json brany z url https://www.reddit.com/r/AmITheAssHole/top/.json?t=all&limit=2
