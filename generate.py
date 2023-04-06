@@ -18,17 +18,13 @@ def createVideoClipFromChunk(mode, clip, audioChunk, videoIndex, chunkIndex):
     clipFragment = clip.subclip(startTime, startTime + audioChunk.duration)
     clipFragment = clipFragment.set_audio(audioChunk)
     clipFragment = clipFragment.volumex(1)
-    if mode == 'dev':
-        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='7000k')
+    if mode == 'prod':
+        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp/temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='4500k', logger=None)
     else:
-        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=2, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='7000k')
-            
+        # change preset to slow for better quality
+        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp/temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='4500k', logger=None)
 
 if __name__ == '__main__':
-    #Prawda jest taka, że jeżeli nie ogarne tego tak, żebym ja był z tego zadowolony, to po chuj to robie
-    #Z drugiej strony nie wszystko musi podobać się mnie, i z takim podejściem nie da rade zrobić nic bo zawsze coś będzie kuło w oczy
-    #Rafonix przejebane zycie 2k23
-    
     # # # MODE is dev or prod # # #
     # # # # # # # # # # # # # # # # 
     mode = 'prod'  # # # # # # # # #
@@ -118,7 +114,7 @@ if __name__ == '__main__':
         
         print(f'### Finished generating audio no.{i}')
         
-        clip = mp.VideoFileClip("backgrounds/parkour_4k.webm")
+        clip = mp.VideoFileClip("backgrounds/parkour_1440.mp4")
         clip = mpvfx.resize(clip, height=1920)
         
         clip_w, clip_h = clip.size
@@ -131,6 +127,14 @@ if __name__ == '__main__':
         
         # Check if audio content length is longer than 180 seconds
         if audioContent.duration > 170:
+            with open('log.json', 'r') as f:
+                data = json.load(f)
+                # add post to json
+                data['posts'].append({ 'id': postId, 'title': postTitle, 'subreddit': postSubreddit, 'status': 'lengthcap', 'index' : i })
+
+            with open('log.json', 'w') as f:
+                json.dump(data, f, indent=4) 
+                  
             print(f'### Audio content too long, skipping post {i}')
             i += 1
             continue
