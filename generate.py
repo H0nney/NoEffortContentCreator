@@ -3,14 +3,12 @@ hti = Html2Image(browser_executable='chromium/GoogleChromePortable64/App/Chrome-
      
 import os
 import random
+from datetime import datetime, timedelta
 import moviepy.editor as mp
 import moviepy.video.fx.all as mpvfx
 
 from time import sleep
 from tiktok_tts.main import main as tiktok_tts
-
-
-# from urllib.request import urlopen
 import json
 
 def createVideoClipFromChunk(mode, clip, audioChunk, videoIndex, chunkIndex):
@@ -21,16 +19,47 @@ def createVideoClipFromChunk(mode, clip, audioChunk, videoIndex, chunkIndex):
     clipFragment = clipFragment.volumex(1)
     clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp/temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='4500k', logger=None)
 
+
+import selenium.webdriver as webdriver
+from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.options import Options
+userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/114.0'
+firefoxDriver = 'geckodriver.exe'
+
+def upload_videos():
+    current_time = datetime.now().strftime("%d/%m/%Y, %H:%M")
+    
+    # open log.json and iterate through posts
+    with open('log.json', 'r') as f:
+        offset_m = 20
+        data = json.load(f)
+        for post in data['posts']:
+            postId = post['id']
+            postTitle = post['title']
+            postIndex = post['index']
+            postParts = post['parts']
+            
+            for i in range(postParts):
+                schedule_time = datetime.now() + timedelta(minutes=offset_m)
+                schedule_time = schedule_time.strftime("%d/%m/%Y, %H:%M")
+                print(f'### Uploading video {postIndex}_{i+1}, scheduled at {schedule_time}')
+                offset_m += 20
+    
+
 if __name__ == '__main__':
+    upload_videos()
+    exit()
+    
     # # # MODE is dev or prod # # #
     # # # # # # # # # # # # # # # # 
-    mode = 'dev'  # # # # # # # # #
+    mode = 'prod'  # # # # # # # # #
     # # # # # # # # # # # # # # # # 
     # # # MODE is dev or prod # # #
     
     postsJson = json.load(open('posts.json'))
 
     i:int = 0
+    generatedCount:int = 0
     
     abbreviations = {
         "AITA": "Am I the bad one?",
@@ -235,21 +264,27 @@ if __name__ == '__main__':
             video = mp.CompositeVideoClip([clip, titleBar]) 
             
             createVideoClipFromChunk(mode, video, generatedAudio, i, 0)
-            # audioTitle
-            # audioContent
             
         if mode == 'prod':
             print(f'### Adding post {i} to JSON LOG')
+            
             # Add post to log.json
             with open('log.json', 'r') as f:
                 data = json.load(f)
-                # add post to json
                 data['posts'].append({ 'id': postId, 'title': postTitle, 'subreddit': postSubreddit, 'status': 'generated', 'index' : i })
 
             with open('log.json', 'w') as f:
                 json.dump(data, f, indent=4)    
+                
+            generatedCount += 1
+            print(f'### Current count: {generatedCount}')
+                
             
         # Cleanup has to be manual. Some bug that i can't be bothered to fix is riddling it.
+        if generatedCount >= 3:
+            upload_videos()
+            break
+        
         i += 1
 
 # Json History

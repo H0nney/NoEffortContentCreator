@@ -2,3 +2,4 @@
 *.png
 sessionid.txt
 chromium/GoogleChromePortable64
+geckodriver.*
