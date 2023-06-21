@@ -6,6 +6,7 @@ import random
 import moviepy.editor as mp
 import moviepy.video.fx.all as mpvfx
 
+from time import sleep
 from tiktok_tts.main import main as tiktok_tts
 
 
@@ -18,16 +19,12 @@ def createVideoClipFromChunk(mode, clip, audioChunk, videoIndex, chunkIndex):
     clipFragment = clip.subclip(startTime, startTime + audioChunk.duration)
     clipFragment = clipFragment.set_audio(audioChunk)
     clipFragment = clipFragment.volumex(1)
-    if mode == 'prod':
-        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp/temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='4500k', logger=None)
-    else:
-        # change preset to slow for better quality
-        clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp/temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='4500k', logger=None)
+    clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp/temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='4500k', logger=None)
 
 if __name__ == '__main__':
     # # # MODE is dev or prod # # #
     # # # # # # # # # # # # # # # # 
-    mode = 'prod'  # # # # # # # # #
+    mode = 'dev'  # # # # # # # # #
     # # # # # # # # # # # # # # # # 
     # # # MODE is dev or prod # # #
     
@@ -125,7 +122,7 @@ if __name__ == '__main__':
         # Audiocontent is generating with annoying glitch at the end.
         audioContent = audioContent.subclip(0, audioContent.duration - 0.12)
         
-        # Check if audio content length is longer than 180 seconds
+        # Check if audio content length is longer than X seconds
         if audioContent.duration > 170:
             with open('log.json', 'r') as f:
                 data = json.load(f)
@@ -252,14 +249,9 @@ if __name__ == '__main__':
             with open('log.json', 'w') as f:
                 json.dump(data, f, indent=4)    
             
-        # CLEANUP
-        for file in os.listdir('temp'):
-            os.remove(f'temp/{file}')
-            
-        for file in os.listdir('.'):
-            if file.startswith('titlebar'):
-                os.remove(file)
-                
+        # Cleanup has to be manual. Some bug that i can't be bothered to fix is riddling it.
         i += 1
 
-# json brany z url https://www.reddit.com/r/AmITheAssHole/top/.json?t=all&limit=1
+# Json History
+# https://www.reddit.com/r/amitheasshole/top/.json?t=all&limit=200
+# https://www.reddit.com/r/talesfromtechsupport/top/.json?t=all&limit=200
