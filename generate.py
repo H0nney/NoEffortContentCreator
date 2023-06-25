@@ -17,39 +17,9 @@ def createVideoClipFromChunk(mode, clip, audioChunk, videoIndex, chunkIndex):
     clipFragment = clip.subclip(startTime, startTime + audioChunk.duration)
     clipFragment = clipFragment.set_audio(audioChunk)
     clipFragment = clipFragment.volumex(1)
-    clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp/temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='4500k', logger=None)
-
-
-import selenium.webdriver as webdriver
-from selenium.webdriver.firefox.service import Service
-from selenium.webdriver.firefox.options import Options
-userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/114.0'
-firefoxDriver = 'geckodriver.exe'
-
-def upload_videos():
-    current_time = datetime.now().strftime("%d/%m/%Y, %H:%M")
-    
-    # open log.json and iterate through posts
-    with open('log.json', 'r') as f:
-        offset_m = 20
-        data = json.load(f)
-        for post in data['posts']:
-            postId = post['id']
-            postTitle = post['title']
-            postIndex = post['index']
-            postParts = post['parts']
-            
-            for i in range(postParts):
-                schedule_time = datetime.now() + timedelta(minutes=offset_m)
-                schedule_time = schedule_time.strftime("%d/%m/%Y, %H:%M")
-                print(f'### Uploading video {postIndex}_{i+1}, scheduled at {schedule_time}')
-                offset_m += 20
-    
+    clipFragment.write_videofile(f'output/video{videoIndex}_{chunkIndex}.mp4', fps=30, codec='h264_nvenc', audio_codec='aac', temp_audiofile='temp/temp-audio.m4a', remove_temp=True, write_logfile=False, bitrate='4500k')
 
 if __name__ == '__main__':
-    upload_videos()
-    exit()
-    
     # # # MODE is dev or prod # # #
     # # # # # # # # # # # # # # # # 
     mode = 'prod'  # # # # # # # # #
@@ -70,12 +40,12 @@ if __name__ == '__main__':
     if mode == 'dev':
         min_duration = 2
     else:
-        min_duration = 25
+        min_duration = 40
         
     for post in postsJson['data']['children']:
         print('---------------------------------')
         print(f'### Processing audio no.{i}')
-        max_duration = 58 # Begin with 58, to be safe of shorts limit, substract title later
+        max_duration = 118 # Begin with 58, to be safe of shorts limit, substract title later
         
         generate = True
         
@@ -132,11 +102,11 @@ if __name__ == '__main__':
 
         # Divide title and content into separate files
         if mode == 'dev':
-            tiktok_tts('en_us_001', 'pregenerated/exampleTitle.txt', sessionid, f'temp/output{i}_title.mp3')
-            tiktok_tts('en_us_001', 'pregenerated/exampleContent.txt', sessionid, f'temp/output{i}_content.mp3')
+            tiktok_tts('en_us_009', 'pregenerated/exampleTitle.txt', sessionid, f'temp/output{i}_title.mp3')
+            tiktok_tts('en_us_009', 'pregenerated/exampleContent.txt', sessionid, f'temp/output{i}_content.mp3')
         else:
-            tiktok_tts('en_us_001', textPath, sessionid, f'temp/output{i}_title.mp3')
-            tiktok_tts('en_us_001', textContentPath, sessionid, f'temp/output{i}_content.mp3')
+            tiktok_tts('en_us_009', textPath, sessionid, f'temp/output{i}_title.mp3')
+            tiktok_tts('en_us_009', textContentPath, sessionid, f'temp/output{i}_content.mp3')
         
         print(f'### Finished generating audio no.{i}')
         
@@ -152,7 +122,7 @@ if __name__ == '__main__':
         audioContent = audioContent.subclip(0, audioContent.duration - 0.12)
         
         # Check if audio content length is longer than X seconds
-        if audioContent.duration > 170:
+        if audioContent.duration > 360:
             with open('log.json', 'r') as f:
                 data = json.load(f)
                 # add post to json
@@ -281,8 +251,7 @@ if __name__ == '__main__':
                 
             
         # Cleanup has to be manual. Some bug that i can't be bothered to fix is riddling it.
-        if generatedCount >= 3:
-            upload_videos()
+        if generatedCount >= 2:
             break
         
         i += 1
